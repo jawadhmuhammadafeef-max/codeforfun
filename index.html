@@ -1,0 +1,361 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CodeLab - Online HTML Editor</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #101116;
+  color: #f4f4f5;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 15px 20px;
+  background: #191a22;
+  border-bottom: 1px solid #333440;
+}
+
+.logo { font-size: 22px; font-weight: bold; }
+.logo span { color: #56e39f; }
+
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-weight: bold;
+  background: #30313d;
+  color: white;
+}
+
+button:hover { filter: brightness(1.2); }
+
+.run {
+  background: #56e39f;
+  color: #102018;
+}
+
+.download { background: #4263eb; }
+
+main { padding: 16px; }
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid #353642;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #191a22;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px;
+  gap: 8px;
+  background: #22232d;
+}
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tab.active {
+  background: #56e39f;
+  color: #101a14;
+}
+
+#editor {
+  display: block;
+  width: 100%;
+  height: 430px;
+  resize: vertical;
+  padding: 16px;
+  border: 0;
+  outline: none;
+  background: #111218;
+  color: #b9f6ca;
+  font: 14px/1.6 Consolas, Monaco, monospace;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.preview-wrap {
+  background: white;
+  height: 430px;
+}
+
+#preview {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: white;
+}
+
+.status {
+  padding: 10px 14px;
+  color: #a8abb9;
+  font-size: 13px;
+}
+
+.tips {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #353642;
+  border-radius: 10px;
+  color: #c5c6d0;
+  line-height: 1.7;
+}
+
+footer {
+  padding: 20px;
+  text-align: center;
+  color: #8d8f9d;
+  font-size: 13px;
+}
+
+@media (max-width: 800px) {
+  .workspace { grid-template-columns: 1fr; }
+  #editor { height: 350px; }
+  .preview-wrap { height: 400px; }
+  header { padding: 12px; }
+  main { padding: 10px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">⚡ Code<span>Lab</span></div>
+  <div class="tabs">
+    <button id="runBtn" class="run">▶ Run</button>
+    <button id="saveBtn">Save</button>
+    <button id="downloadBtn" class="download">Download HTML</button>
+  </div>
+</header>
+
+<main>
+  <div class="workspace">
+
+    <section class="panel">
+      <div class="panel-head">
+        <strong>⌨️ Code Editor</strong>
+        <div class="tabs">
+          <button class="tab active" data-lang="html">HTML</button>
+          <button class="tab" data-lang="css">CSS</button>
+          <button class="tab" data-lang="js">JS</button>
+        </div>
+      </div>
+
+      <textarea id="editor" spellcheck="false"
+        autocapitalize="off" autocomplete="off"
+        aria-label="Code editor"></textarea>
+
+      <div class="status" id="editStatus">
+        HTML editor ready
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <strong>🌐 Live Preview</strong>
+        <button id="refreshBtn">↻ Refresh</button>
+      </div>
+
+      <div class="preview-wrap">
+        <iframe id="preview" title="Website preview"
+          sandbox="allow-scripts allow-forms"
+          referrerpolicy="no-referrer"></iframe>
+      </div>
+
+      <div class="status" id="previewStatus">
+        Click Run to preview your website.
+      </div>
+    </section>
+
+  </div>
+
+  <section class="tips">
+    <strong>💡 How to use CodeLab</strong><br>
+    1. Choose HTML, CSS, or JS above the editor.<br>
+    2. Type your code in the editor.<br>
+    3. Click <strong>Run</strong> to see your website.<br>
+    4. Click <strong>Save</strong> to remember your code on this device.<br>
+    5. Click <strong>Download HTML</strong> to export your website.
+  </section>
+</main>
+
+<footer>
+  CodeLab · A simple browser-based coding playground
+</footer>
+
+<script>
+const defaults = {
+  html: `<div class="site">
+  <h1>🚀 My First Website</h1>
+  <p>Welcome to my website made with CodeLab!</p>
+  <button id="hello">Click me!</button>
+  <p id="message"></p>
+</div>`,
+
+  css: `body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f4ff;
+  color: #20253a;
+}
+.site {
+  max-width: 650px;
+  margin: 50px auto;
+  padding: 25px;
+  text-align: center;
+}
+h1 { color: #4263eb; }
+button {
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #4263eb;
+  color: white;
+  cursor: pointer;
+}`,
+
+  js: `document.getElementById("hello").addEventListener("click", () => {
+  document.getElementById("message").textContent =
+    "Awesome! Your JavaScript works! 🎉";
+});`
+};
+
+const editor = document.getElementById("editor");
+const preview = document.getElementById("preview");
+const editStatus = document.getElementById("editStatus");
+const previewStatus = document.getElementById("previewStatus");
+
+let current = "html";
+let code = { ...defaults };
+
+function setStatus(message) {
+  editStatus.textContent = message;
+}
+
+function switchTab(lang) {
+  code[current] = editor.value;
+  current = lang;
+  editor.value = code[current];
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.lang === lang);
+  });
+
+  setStatus(lang.toUpperCase() + " editor ready");
+}
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => switchTab(tab.dataset.lang));
+});
+
+editor.addEventListener("input", () => {
+  code[current] = editor.value;
+  setStatus("Unsaved changes · " + current.toUpperCase());
+});
+
+function buildWebsite() {
+  code[current] = editor.value;
+
+  // Build one standalone HTML file from all three editors.
+  let html = code.html;
+
+  const cssTag = "<style>\n" + code.css + "\n</style>";
+  const jsTag = "<script>\n" +
+    code.js.replace(/<\/script/gi, "<\\/script") +
+    "\n<\/script>";
+
+  if (/<\/head\s*>/i.test(html)) {
+    html = html.replace(/<\/head\s*>/i, cssTag + "\n</head>");
+  } else {
+    html = cssTag + html;
+  }
+
+  if (/<\/body\s*>/i.test(html)) {
+    html = html.replace(/<\/body\s*>/i, jsTag + "\n</body>");
+  } else {
+    html += jsTag;
+  }
+
+  return html;
+}
+
+function runCode() {
+  preview.srcdoc = buildWebsite();
+  previewStatus.textContent = "Preview updated successfully.";
+}
+
+document.getElementById("runBtn").addEventListener("click", runCode);
+document.getElementById("refreshBtn").addEventListener("click", runCode);
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  code[current] = editor.value;
+
+  try {
+    localStorage.setItem("codelab-project", JSON.stringify(code));
+    setStatus("Project saved on this device!");
+  } catch (error) {
+    setStatus("Could not save. Try downloading your HTML instead.");
+  }
+});
+
+document.getElementById("downloadBtn").addEventListener("click", () => {
+  code[current] = editor.value;
+
+  const file = new Blob([buildWebsite()], {
+    type: "text/html;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "my-website.html";
+  link.click();
+  URL.revokeObjectURL(url);
+  setStatus("HTML download requested.");
+});
+
+try {
+  const saved = localStorage.getItem("codelab-project");
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    if (parsed.html && parsed.css && parsed.js) {
+      code = parsed;
+    }
+  }
+} catch (error) {
+  // Continue with the starter project if storage is unavailable.
+}
+
+editor.value = code.html;
+runCode();
+</script>
+
+</body>
+</html>
